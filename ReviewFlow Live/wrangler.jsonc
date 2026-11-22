@@ -1,0 +1,10 @@
+{
+  "name": "google-reviews-saas-0-1",
+  "compatibility_date": "2026-11-21",
+  "main": "./cloudflare-dist/_worker.js",
+  "assets": {
+    "directory": "./cloudflare-dist",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  }
+}

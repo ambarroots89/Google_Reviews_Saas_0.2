@@ -1,5 +1,5 @@
 {
-  "name": "google-reviews-saas-0-1",
+  "name": "google-reviews-saas-0-2",
   "compatibility_date": "2026-11-21",
   "main": "./cloudflare-dist/_worker.js",
   "assets": {

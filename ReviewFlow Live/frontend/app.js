@@ -327,7 +327,7 @@ function dashboard(view) {
   return `<div class="page-heading"><div><h1>${view === "clients" ? "Clients" : "Dashboard"}</h1><p>${googleReviewLinksEnabled ? "Manage client review pages and QR campaigns." : "Manage client review pages."}</p></div><div class="heading-actions">${googleReviewLinksEnabled ? `<a class="btn btn-secondary" href="#google-qr">${icon("qr", "small")} Create Google Review QR</a>` : ""}${button("Add New Client", "add-client", "primary", "plus")}</div></div>
     ${view === "dashboard" ? `<section class="hero" aria-labelledby="hero-title">
       <div class="hero-copy"><span class="hero-kicker eyebrow">${icon("sparkle", "small")} AI-assisted reviews</span><h2 id="hero-title">Make it easy to leave a review.</h2><p>${googleReviewLinksEnabled ? "Give every client a branded QR code and a guided review page." : "Give every client a branded review page that guides customers through their draft."}</p>${button("Set up a review page", "add-client", "hero", googleReviewLinksEnabled ? "qr" : "edit")}</div>
-      <div class="hero-art" aria-hidden="true"><div class="orbit"></div><div class="hero-spark">${icon("sparkle")}</div><div class="hero-qr">${icon(googleReviewLinksEnabled ? "qr" : "edit")}<b>Share your experience</b></div><div class="hero-rating">★★★★★</div></div>
+      <div class="hero-art premium-hero-art" aria-hidden="true">${profileIllustration()}</div>
     </section>
     <section class="stats" aria-label="Workspace summary">${summary.map(([symbol, colour, value, label]) => `<div class="stat"><div class="stat-icon ${colour}">${icon(symbol)}</div><div><strong>${value}</strong><span>${label}</span></div></div>`).join("")}</section>` : ""}
     <section class="panel" aria-labelledby="client-heading">
@@ -653,7 +653,13 @@ async function copyText(value, message) {
   notify(message);
 }
 
+let disposeProfileScene = null;
+let profileSceneVersion = 0;
+let profileModulePromise = null;
+
 function render(focusSelector) {
+  profileSceneVersion += 1;
+  if (disposeProfileScene) { disposeProfileScene(); disposeProfileScene = null; }
   const view = currentView();
   if (loadingCustomerPage) {
     app.innerHTML = '<section class="customer"><div class="customer-card"><div class="customer-body"><p role="status">Opening your review page…</p></div></div></section>';
@@ -661,6 +667,19 @@ function render(focusSelector) {
   }
   document.title = view === "customer" ? `Review ${customerBusiness().name} · ReviewFlow` : "ReviewFlow · Agency Workspace";
   app.innerHTML = view === "customer" ? customerPage() : workspace(view === "setup" ? wizard() : view === "google-qr" ? googleQrPage() : dashboard(view), view);
+  const visual = app.querySelector('.profile-visual');
+  if (visual) {
+    const sceneHost = document.createElement('div');
+    sceneHost.className = 'profile-three';
+    visual.append(sceneHost);
+    const version = profileSceneVersion;
+    profileModulePromise ||= import('./assets/profile-3d.js').catch(() => null);
+    profileModulePromise.then(module => {
+      if (module && version === profileSceneVersion && sceneHost.isConnected) {
+        try { disposeProfileScene = module.mountProfile3D(sceneHost); } catch { /* Keep the CSS illustration as a fallback. */ }
+      }
+    });
+  }
   for (const image of app.querySelectorAll("[data-qr]")) {
     image.src = qrCanvas(510, image.dataset.qr).toDataURL("image/png");
   }

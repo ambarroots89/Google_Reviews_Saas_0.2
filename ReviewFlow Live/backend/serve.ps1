@@ -21,6 +21,9 @@ $files = @{
     '/assets/qrcode.js'          = @('assets/qrcode.js', 'text/javascript; charset=utf-8')
     '/assets/mark.svg'           = @('assets/mark.svg', 'image/svg+xml')
     '/assets/manrope.woff2'      = @('assets/manrope.woff2', 'font/woff2')
+    '/assets/profile-3d.js'      = @('assets/profile-3d.js', 'text/javascript; charset=utf-8')
+    '/assets/three.module.min.js' = @('assets/three.module.min.js', 'text/javascript; charset=utf-8')
+    '/assets/three.core.min.js'  = @('assets/three.core.min.js', 'text/javascript; charset=utf-8')
 }
 if ($CustomerDemoOnly) {
     $files['/phone'] = $files['/index.html']

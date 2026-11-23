@@ -577,3 +577,27 @@ dialog p { color: var(--muted); line-height: 1.55; }
   .ray, .profile-float, .orbit-ring, .workspace .stepper .current .step-number { animation: none; }
   .profile-tilt, .workspace .btn, .workspace .stat { transition: none; }
 }
+
+/* The floating card, location pin, and orbit are real WebGL geometry. */
+.profile-visual { flex-basis: 390px; width: 390px; height: 230px; }
+.profile-three { position: absolute; z-index: 5; inset: 0; }
+.profile-three canvas { display: block; width: 100%; height: 100%; }
+.profile-visual.is-3d-ready > .profile-float, .profile-visual.is-3d-ready > .profile-orbit { display: none; }
+.premium-hero-art { display: flex; align-items: center; justify-content: center; pointer-events: auto; }
+.premium-hero-art::before { pointer-events: none; }
+.premium-hero-art .profile-visual { flex: 0 0 430px; width: 430px; height: 265px; }
+.workspace .hero { min-height: 270px; }
+@media (max-width: 900px) {
+  .profile-visual { flex-basis: 320px; width: 320px; height: 210px; transform: none; }
+  .premium-hero-art .profile-visual { flex-basis: 350px; width: 350px; height: 235px; }
+}
+@media (max-width: 560px) {
+  .workspace .hero { flex-direction: column; align-items: stretch; }
+  .workspace .hero-copy { max-width: 100%; }
+  .workspace .premium-hero-art { position: relative; inset: auto; height: 200px; margin: 4px 0 -10px; opacity: 1; }
+  .premium-hero-art .profile-visual { display: block; flex-basis: 100%; width: 100%; height: 210px; }
+  .wizard-hero { flex-direction: column; gap: 0; }
+  .workspace .wizard-heading { margin-bottom: 0; }
+  .wizard-hero .profile-visual { display: block; flex: none; align-self: center; width: 100%; max-width: 340px; height: 190px; }
+  .profile-visual { overflow: clip; }
+}

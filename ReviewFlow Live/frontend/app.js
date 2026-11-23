@@ -257,9 +257,17 @@ function currentView() {
   return location.hash === "#clients" ? "clients" : "dashboard";
 }
 
+function workspaceRays() {
+  return `<div class="ambient-rays" aria-hidden="true"><svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="ray-gradient" x1="0" x2="1" y1="1" y2="0"><stop stop-color="#994e85" stop-opacity="0"/><stop offset=".52" stop-color="#e699bb" stop-opacity=".7"/><stop offset="1" stop-color="#9d79c6" stop-opacity="0"/></linearGradient><filter id="ray-glow"><feGaussianBlur stdDeviation="5"/></filter></defs><g fill="none" stroke="url(#ray-gradient)"><g class="ray ray-one"><path d="M-180 780 C240 400 340 930 800 520 S1200 230 1660 130" stroke-width="18" opacity=".19" filter="url(#ray-glow)"/><path d="M-180 780 C240 400 340 930 800 520 S1200 230 1660 130" stroke-width="1.5" opacity=".34"/></g><g class="ray ray-two"><path d="M-150 890 C250 550 360 1010 830 650 S1300 320 1640 260" stroke-width="14" opacity=".13" filter="url(#ray-glow)"/><path d="M-150 890 C250 550 360 1010 830 650 S1300 320 1640 260" stroke-width="1" opacity=".3"/></g><g class="ray ray-three"><path d="M-200 700 C160 400 430 850 900 460 S1310 260 1600 50" stroke-width="1" opacity=".2"/></g></g></svg></div>`;
+}
+
+function profileIllustration() {
+  return `<div class="profile-visual" aria-hidden="true"><div class="profile-orbit orbit-back"><div class="orbit-ring"></div></div><div class="profile-float"><div class="profile-tilt"><div class="profile-illustration"><div class="profile-browser-bar"><span></span><span></span><span></span><i></i></div><div class="profile-browser-content"><div class="profile-map-icon"><svg viewBox="0 0 36 36" fill="none"><path d="M18 32S7.5 22.8 7.5 14.9a10.5 10.5 0 1 1 21 0C28.5 22.8 18 32 18 32Z" fill="#34a853"/><path d="M7.7 17c-.15-.7-.2-1.4-.2-2.1C7.5 9.1 12.2 4.4 18 4.4c3.1 0 5.9 1.3 7.8 3.4L17 18.1Z" fill="#4285f4"/><path d="M25.8 7.8c1.7 1.9 2.7 4.4 2.7 7.1 0 2.3-.9 4.8-2.2 7.2l-9.3-4Z" fill="#fbbc04"/><path d="M7.7 17c.9 4.6 4.6 9.5 7.3 12.4L22 19.1 17 18.1Z" fill="#ea4335"/><circle cx="18" cy="15" r="4.2" fill="#fff"/></svg></div><div class="profile-browser-copy"><strong>Google Business Profile</strong><small>Make every experience count</small><span class="profile-stars">★★★★★</span></div></div><div class="profile-lines"><span></span><span></span></div><div class="profile-illustration-footer"><span class="profile-footer-icon">${icon("sparkle", "small")}</span><span>Made for meaningful reviews</span></div></div></div></div><div class="profile-orbit orbit-front"><div class="orbit-ring"></div></div></div>`;
+}
+
 function workspace(content, view) {
   const title = { setup: "Client setup", clients: "Clients", dashboard: "Overview", "google-qr": "Google Review QR" }[view];
-  return `<div class="workspace">
+  return `<div class="workspace">${workspaceRays()}
     <aside class="sidebar">
       ${brand()}
       <div class="workspace-id"><div class="workspace-icon">${icon("briefcase", "small")}</div><div><strong>Agency Workspace</strong><small>Review management</small></div></div>
@@ -477,9 +485,9 @@ function wizard() {
   const body = [renderWebsiteStep, renderProfileStep, renderCompleteStep][stage]();
   return `<section class="wizard">
     ${dashboardLink("Back to dashboard")}
-    <div class="wizard-heading"><h1>${stage === 2 ? "Setup complete" : "Set up a new client"}</h1><p>${subtitle[stage]}</p></div>
+    <div class="wizard-hero"><div class="wizard-heading"><span class="wizard-kicker">CLIENT ONBOARDING</span><h1>${stage === 2 ? "Setup complete" : "Set up a new client"}</h1><p>${subtitle[stage]}</p></div>${profileIllustration()}</div>
     <ol class="stepper" aria-label="Setup progress">${steps.map((step, index) => `<li class="${index < stage ? "done" : index === stage ? "current" : ""}" ${index === stage ? 'aria-current="step"' : ""}><span class="step-number">${index < stage ? icon("check", "small") : index + 1}</span>${step}</li>`).join("")}</ol>
-    <div class="panel wizard-panel">${body}</div>
+    <div class="wizard-layout ${stage === 0 && setup.stage === "website" ? "with-insight" : ""}"><div class="panel wizard-panel">${body}</div>${stage === 0 && setup.stage === "website" ? `<aside class="analysis-insight"><div class="insight-icon">${icon("sparkle")}</div><span class="insight-label">WEBSITE ANALYSIS</span><h2>Get to know your client</h2><p>We’ll look for a few key details to help you set up their review experience.</p><div class="insight-divider"></div><ul><li>${icon("check", "small")} Business information</li><li>${icon("check", "small")} Branding and colours</li><li>${icon("check", "small")} Relevant customer questions</li></ul><span class="insight-note">You can review and edit the details.</span></aside>` : ""}</div>
   </section>`;
 }
 
@@ -990,6 +998,28 @@ app.addEventListener("change", event => {
   customerLinkError = "";
   render();
   prepareCustomerLink();
+});
+
+let profileBounds = null;
+app.addEventListener("pointerover", event => {
+  const visual = event.target.closest(".profile-visual");
+  if (!visual || visual.contains(event.relatedTarget) || event.pointerType !== "mouse") return;
+  profileBounds = visual.getBoundingClientRect();
+});
+app.addEventListener("pointermove", event => {
+  const visual = event.target.closest(".profile-visual");
+  if (!visual || !profileBounds || event.pointerType !== "mouse" || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const x = (event.clientX - profileBounds.left) / profileBounds.width - .5;
+  const y = (event.clientY - profileBounds.top) / profileBounds.height - .5;
+  visual.style.setProperty("--tilt-y", `${(x * 5).toFixed(2)}deg`);
+  visual.style.setProperty("--tilt-x", `${(-y * 4).toFixed(2)}deg`);
+});
+app.addEventListener("pointerout", event => {
+  const visual = event.target.closest(".profile-visual");
+  if (!visual || visual.contains(event.relatedTarget)) return;
+  visual.style.removeProperty("--tilt-y");
+  visual.style.removeProperty("--tilt-x");
+  profileBounds = null;
 });
 
 window.addEventListener("hashchange", () => {

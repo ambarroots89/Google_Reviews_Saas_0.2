@@ -13,6 +13,7 @@ const icons = {
   star: '<path d="m12 3 2.8 5.7 6.3.9-4.6 4.4 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.6l6.2-.9z"/>',
   search: '<circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/>',
   chevron: '<path d="m9 6 6 6-6 6"/>',
+  arrow: '<path d="M5 12h14m-5-5 5 5-5 5"/>',
   dots: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
   globe: '<circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
@@ -141,6 +142,8 @@ function reviewHash(business) {
   const params = new URLSearchParams({ name: business.name });
   if (business.city) params.set("city", business.city.slice(0, 45));
   if (business.palette?.[0]) params.set("color", business.palette[0].slice(1));
+  const logo = publicWebUrl(business.logo);
+  if (logo && logo.href.length <= 200) params.set("logo", logo.href);
   if (business.questions) params.set("questions", business.questions.join("-"));
   return `#review/${businessSlug(business.name)}?${params}`;
 }
@@ -225,6 +228,7 @@ function customerBusiness() {
     name: analysisText(params.get("name"), 100) || "This business",
     city: analysisText(params.get("city"), 45),
     palette: [normaliseColour("#" + params.get("color"))].filter(Boolean),
+    logo: publicWebUrl(params.get("logo"))?.href || "",
     questions: questionIds && questionIds.every(id => id < questionBank.length) ? questionIds : null
   };
 }
@@ -235,7 +239,7 @@ function businessLogo(business, allowImage = true) {
 }
 
 function brand(classes = "") {
-  return `<a class="brand ${classes}" href="#dashboard" aria-label="ReviewFlow dashboard"><img src="assets/mark.svg" alt=""><span>ReviewFlow</span></a>`;
+  return `<a class="brand ${classes}" href="#dashboard" aria-label="ReviewFlow dashboard"><img src="assets/mark.svg?v=2" alt=""><span>ReviewFlow</span></a>`;
 }
 
 function button(label, action, style = "primary", symbol = "") {
@@ -479,17 +483,26 @@ function wizard() {
   </section>`;
 }
 
+function questionProgress(index, total) {
+  return `<div class="question-meta"><div class="question-meta-heading"><span class="question-badge">Question ${index + 1} of ${total}</span><span class="question-meta-hint">Your experience</span></div><span class="question-progress" aria-hidden="true">${Array.from({ length: total }, (_, step) => `<i class="${step < index ? "completed" : step === index ? "current" : ""}"></i>`).join("")}</span></div>`;
+}
+
+function answerCounter(value) {
+  return `<div class="answer-count" aria-hidden="true"><span id="answer-count">${value.length}</span> / 500</div>`;
+}
+
 function customerQuestion() {
   const business = customerBusiness();
   if (business.questions) {
     const index = customer.question;
     const question = questionBank[business.questions[index]];
     const optional = index === 2;
-    return `<div class="question-meta"><span>Question ${index + 1} of 3</span><span class="question-progress" aria-hidden="true">${[0, 1, 2].map(step => `<i class="${step <= index ? "filled" : ""}"></i>`).join("")}</span></div>
-      <h1>${escapeHtml(question)}</h1><p>${optional ? "You can skip this question." : "Share your genuine experience in your own words."}</p>
-      <label class="sr-only" for="customer-answer">Your answer</label><textarea id="customer-answer" maxlength="500" placeholder="Write your answer here">${escapeHtml(customer.answers[index] || "")}</textarea>
+    const answer = String(customer.answers[index] || "");
+    return `${questionProgress(index, business.questions.length)}
+      <div class="question-content"><h1>${escapeHtml(question)}</h1><p>${optional ? "You can skip this question." : "Share your genuine experience in your own words."}</p></div>
+      <label class="customer-field-label" for="customer-answer">Your answer <span aria-hidden="true">A few words</span></label><textarea id="customer-answer" maxlength="500" placeholder="Write your answer here...">${escapeHtml(answer)}</textarea>${answerCounter(answer)}
       <div class="panel-actions ${index > 0 ? "split" : ""}">${index > 0 ? button("Back", "previous-question", "text") : ""}
-      <button id="next-question" class="btn btn-primary" type="button" data-action="next-question" ${!optional && !String(customer.answers[index] || "").trim() ? "disabled" : ""}>${optional ? icon("sparkle", "small") + " Prepare my review" : "Continue"}</button></div>`;
+      <button id="next-question" class="btn btn-primary" type="button" data-action="next-question" ${!optional && !answer.trim() ? "disabled" : ""}>${optional ? "Prepare my review" : "Continue"}</button></div>`;
   }
   const visitOptions = customerBusiness().sample ? sampleVisits : standardVisits;
   const index = customer.question;
@@ -498,19 +511,19 @@ function customerQuestion() {
   const questions = [
     () => `<div class="choices">${visitOptions.map(label => `<button type="button" class="choice" data-action="visit-option" data-option="${label}" aria-pressed="${customer.answers[0] === label}">${label}</button>`).join("")}</div>`,
     () => `<div class="stars" role="group" aria-label="Rate your experience">${ratings.map((rating, option) => `<button type="button" class="star ${customer.answers[1] >= option + 1 ? "selected" : ""}" data-action="rating" data-option="${option + 1}" aria-label="${option + 1} ${option ? "stars" : "star"} — ${rating}" aria-pressed="${customer.answers[1] === option + 1}">${icon("star")}</button>`).join("")}</div><p class="help-text" id="rating-label" aria-live="polite">${ratings[customer.answers[1] - 1] || "Tap a star to choose your rating."}</p>`,
-    () => `<label class="sr-only" for="customer-extra">Details about your visit</label><textarea id="customer-extra" maxlength="500" placeholder="What stood out about your experience?">${escapeHtml(customer.answers[2])}</textarea>`
+    () => `<label class="customer-field-label" for="customer-extra">Details about your visit <span aria-hidden="true">Optional</span></label><textarea id="customer-extra" maxlength="500" placeholder="Write your answer here...">${escapeHtml(customer.answers[2])}</textarea>${answerCounter(customer.answers[2])}`
   ];
-  return `<div class="question-meta"><span>Question ${index + 1} of 3</span><span class="question-progress" aria-hidden="true">${titles.map((_, step) => `<i class="${step <= index ? "filled" : ""}"></i>`).join("")}</span></div>
-    <h1>${titles[index]}</h1><p>${descriptions[index]}</p>${questions[index]()}
+  return `${questionProgress(index, titles.length)}
+    <div class="question-content"><h1>${titles[index]}</h1><p>${descriptions[index]}</p></div>${questions[index]()}
     <div class="panel-actions ${index > 0 ? "split" : ""}">${index > 0 ? button("Back", "previous-question", "text") : ""}
-    <button id="next-question" class="btn btn-primary" type="button" data-action="next-question" ${index < 2 && !customer.answers[index] ? "disabled" : ""}>${index === 2 ? icon("sparkle", "small") + " Prepare my review" : "Continue"}</button></div>`;
+    <button id="next-question" class="btn btn-primary" type="button" data-action="next-question" ${index < 2 && !customer.answers[index] ? "disabled" : ""}>${index === 2 ? "Prepare my review" : "Continue"}</button></div>`;
 }
 
 function customerBody() {
   if (customer.question < 3) return customerQuestion();
   if (customer.question === 3) return `<div class="process" role="status"><div class="loader">${icon("sparkle")}</div><h1>Preparing your review</h1><p>Putting your answers into a draft you can edit.</p><div class="progress-track" style="--duration:1.8s" aria-hidden="true"><span></span></div></div>`;
   if (customer.question === 4) return `<span class="draft-badge">${icon("sparkle", "small")} Draft from your answers</span><h1>Make it your own</h1><p>ReviewFlow used your answers to write this draft. Edit anything you’d like before copying it.</p>
-    <label class="sr-only" for="review-draft">Your review draft</label><textarea id="review-draft" class="draft-text">${escapeHtml(customer.draft)}</textarea>
+    <label class="customer-field-label" for="review-draft">Your review draft <span aria-hidden="true">Ready to edit</span></label><textarea id="review-draft" class="draft-text">${escapeHtml(customer.draft)}</textarea>
     <div class="panel-actions split">${button("Edit answers", "edit-answers", "text")}<button id="continue-google" class="btn btn-primary" type="button" data-action="continue-google" ${customer.draft.trim() ? "" : "disabled"}>${googleReviewLinksEnabled ? "Continue to Google Review" : "Finish Preview"}</button></div>`;
   return `<div class="step-intro"><div class="step-icon">${icon("success")}</div><div><h1>${googleReviewLinksEnabled ? "Google review preview" : "Review preview complete"}</h1><p>${googleReviewLinksEnabled ? "This demo simulates the handoff to Google. You can copy your draft from here." : "Your edited draft is ready to copy."}</p></div></div>
     <div class="panel-actions split">${button("Back to draft", "back-draft", "text")}${button("Copy review draft", "copy-draft", "primary", "copy")}</div>`;
@@ -518,13 +531,10 @@ function customerBody() {
 
 function customerPage() {
   const business = customerBusiness();
-  const accent = business.palette?.[0] || "#C6A253";
-  const rgb = accent.match(/[a-f\d]{2}/gi).map(value => parseInt(value, 16));
-  const mastColour = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000 < 125 ? accent : "#142439";
-  return `<section class="customer" style="--customer-accent:${accent};--customer-mast:${mastColour}">
+  return `<section class="customer">
     ${previewMode ? `<div class="customer-toolbar">${brand()}${button("Back to setup", "back-setup", "secondary")}</div>` : ""}
-    <div class="customer-card"><header class="customer-mast">${businessLogo(business, false)}<strong>${escapeHtml(business.name)}</strong><small>${business.city ? escapeHtml(business.city) + " · " : ""}Share your experience</small></header><div class="customer-body">${customerBody()}</div></div>
-    <p class="customer-credit">Powered by ReviewFlow</p>
+    <div class="customer-card"><header class="customer-mast">${businessLogo(business)}<div><strong>${escapeHtml(business.name)}</strong><small>Share your experience</small></div><span class="customer-mast-tag">CUSTOMER FEEDBACK</span></header><div class="customer-body">${customerBody()}</div></div>
+    <p class="customer-credit"><img src="assets/mark.svg?v=2" alt=""><span>Powered by <strong>ReviewFlow</strong></span></p>
   </section>`;
 }
 
@@ -549,7 +559,7 @@ function qrCanvas(maxSize, url) {
   return canvas;
 }
 
-function downloadPoster() {
+async function downloadPoster() {
   const url = currentGoogleUrl();
   if (!url) return;
   const business = currentView() === "setup" ? setup.business : null;
@@ -580,6 +590,15 @@ function downloadPoster() {
   ctx.font = '30px "Segoe UI", sans-serif';
   if (business?.city) ctx.fillText([business.name, business.city].join(" · "), 600, 1385, 1040);
   ctx.font = '23px "Segoe UI", sans-serif';
+  try {
+    const mark = new Image();
+    mark.src = "assets/mark.svg?v=2";
+    await mark.decode();
+    const textWidth = ctx.measureText("Powered by ReviewFlow").width;
+    ctx.drawImage(mark, 600 - textWidth / 2 - 34, 1423, 25, 25);
+  } catch {
+    // Keep the poster downloadable if the optional logo cannot be loaded.
+  }
   ctx.fillText("Powered by ReviewFlow", 600, 1443);
   const download = document.createElement("a");
   download.download = (business ? businessSlug(business.name) : "google-review") + "-qr-poster.png";
@@ -935,8 +954,10 @@ app.addEventListener("input", event => {
     app.querySelector("#confirm-button").disabled = !setup.selected || !profileMatches();
   } else if (id === "customer-extra") {
     customer.answers[2] = value;
+    app.querySelector("#answer-count").textContent = value.length;
   } else if (id === "customer-answer") {
     customer.answers[customer.question] = value;
+    app.querySelector("#answer-count").textContent = value.length;
     app.querySelector("#next-question").disabled = customer.question < 2 && !value.trim();
   } else if (id === "review-draft") {
     customer.draft = value;

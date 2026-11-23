@@ -209,10 +209,10 @@ async function analyseWebsite(website, signal, findGoogleReviewLink) {
       response = await fetch(endpoint, { headers: { "X-ReviewFlow-Request": "website" }, signal });
     } catch (error) {
       if (signal.aborted) throw error;
-      throw new Error("The local ReviewFlow server is unavailable. Open it again and retry.");
+      throw new Error("ReviewFlow could not reach its website-analysis service. Please try again.");
     }
     if (!(response.headers.get("content-type") || "").includes("application/json")) {
-      throw new Error("Live analysis needs the updated ReviewFlow server. Restart it with Open ReviewFlow.cmd.");
+      throw new Error("Website analysis is temporarily unavailable. Please try again later.");
     }
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "The website could not be read.");

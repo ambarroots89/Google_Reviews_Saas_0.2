@@ -8,6 +8,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 if (!$CustomerDemoOnly) { . (Join-Path $PSScriptRoot 'fetch-website.ps1') }
+$frontendRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'frontend'
 $phoneDemoConfig = Join-Path $env:TEMP 'reviewflow-phone-preview/origin.json'
 $customerLinksDir = Join-Path $env:TEMP 'reviewflow-phone-preview/links'
 New-Item -ItemType Directory -Path $customerLinksDir -Force | Out-Null
@@ -167,7 +168,7 @@ try {
                 $body = [Text.Encoding]::UTF8.GetBytes(($data | ConvertTo-Json -Compress))
             } elseif ($file) {
                 $status = '200 OK'
-                $body = [IO.File]::ReadAllBytes((Join-Path $PSScriptRoot $file[0]))
+                $body = [IO.File]::ReadAllBytes((Join-Path $frontendRoot $file[0]))
                 $mime = $file[1]
             } else {
                 $status = '404 Not Found'

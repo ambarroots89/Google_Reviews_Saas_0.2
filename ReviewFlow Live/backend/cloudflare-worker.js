@@ -107,7 +107,7 @@ export default {
       } catch { return json({ error: "Customer page not found." }, 404); }
     }
     if (url.pathname === "/phone") {
-      const asset = new URL("/index.html", url);
+      const asset = new URL("/", url);
       return env.ASSETS.fetch(new Request(asset, request));
     }
     return env.ASSETS.fetch(request);
